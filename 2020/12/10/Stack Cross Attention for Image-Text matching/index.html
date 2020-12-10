@@ -1,0 +1,226 @@
+<!DOCTYPE html><html lang="en" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YTEP | YTEP</title><meta name="author" content="YTEP"><meta name="copyright" content="YTEP"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><meta name="description" content="Stacked Cross Attention for Image-Text Matching Analysis, further thinking and relation with my current work  Hint: 本文主要是对该论文进行分析，除了对论文内容进行叙述，还穿插着本人自己的思考，所以该文中的一些论述不一定在原论文有对应的表达。 Abstract之前的工作：  简单地将所">
+<meta property="og:type" content="article">
+<meta property="og:title" content="YTEP">
+<meta property="og:url" content="http://example.com/2020/12/10/Stack%20Cross%20Attention%20for%20Image-Text%20matching/index.html">
+<meta property="og:site_name" content="YTEP">
+<meta property="og:description" content="Stacked Cross Attention for Image-Text Matching Analysis, further thinking and relation with my current work  Hint: 本文主要是对该论文进行分析，除了对论文内容进行叙述，还穿插着本人自己的思考，所以该文中的一些论述不一定在原论文有对应的表达。 Abstract之前的工作：  简单地将所">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg">
+<meta property="article:published_time" content="2020-12-10T08:46:23.963Z">
+<meta property="article:modified_time" content="2020-12-10T08:46:12.087Z">
+<meta property="article:author" content="YTEP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg"><link rel="shortcut icon" href="https://avatars0.githubusercontent.com/u/48089846?s=400&u=39416cbb82df7df1d209ad313a32b17862577596&v=4"><link rel="canonical" href="http://example.com/2020/12/10/Stack%20Cross%20Attention%20for%20Image-Text%20matching/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css"><script>var GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true},
+  copy: {
+    success: 'Copy successfully',
+    error: 'Copy error',
+    noSupport: 'The browser does not support'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: 'Just',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  ClickShowText: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  justifiedGallery: {
+    js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+    css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+};
+
+var saveToLocal = {
+  set: function setWithExpiry(key, value, ttl) {
+    const now = new Date()
+    const expiryDay = ttl * 86400000
+    const item = {
+      value: value,
+      expiry: now.getTime() + expiryDay,
+    }
+    localStorage.setItem(key, JSON.stringify(item))
+  },
+
+  get: function getWithExpiry(key) {
+    const itemStr = localStorage.getItem(key)
+
+    if (!itemStr) {
+      return undefined
+    }
+    const item = JSON.parse(itemStr)
+    const now = new Date()
+
+    if (now.getTime() > item.expiry) {
+      localStorage.removeItem(key)
+      return undefined
+    }
+    return item.value
+  }
+}</script><script id="config_change">var GLOBAL_CONFIG_SITE = { 
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2020-12-10 16:46:12'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(function () {  window.activateDarkMode = function () {
+    document.documentElement.setAttribute('data-theme', 'dark')
+    if (document.querySelector('meta[name="theme-color"]') !== null) {
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+    }
+  }
+  window.activateLightMode = function () {
+    document.documentElement.setAttribute('data-theme', 'light')
+   if (document.querySelector('meta[name="theme-color"]') !== null) {
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+    }
+  }
+  const autoChangeMode = 'false'
+  const t = saveToLocal.get('theme')
+  if (autoChangeMode === '1') {
+    const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches
+    const isNotSpecified = window.matchMedia('(prefers-color-scheme: no-preference)').matches
+    const hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+    if (t === undefined) {
+      if (isLightMode) activateLightMode()
+      else if (isDarkMode) activateDarkMode()
+      else if (isNotSpecified || hasNoSupport) {
+        const now = new Date()
+        const hour = now.getHours()
+        const isNight = hour <= 6 || hour >= 18
+        isNight ? activateDarkMode() : activateLightMode()
+      }
+      window.matchMedia('(prefers-color-scheme: dark)').addListener(function (e) {
+        if (saveToLocal.get('theme') === undefined) {
+          e.matches ? activateDarkMode() : activateLightMode()
+        }
+      })
+    } else if (t === 'light') activateLightMode()
+    else activateDarkMode()
+  } else if (autoChangeMode === '2') {
+    const now = new Date()
+    const hour = now.getHours()
+    const isNight = hour <= 6 || hour >= 18
+    if (t === undefined) isNight ? activateDarkMode() : activateLightMode()
+    else if (t === 'light') activateLightMode()
+    else activateDarkMode()
+  } else {
+    if (t === 'dark') activateDarkMode()
+    else if (t === 'light') activateLightMode()
+  }const asideStatus = saveToLocal.get('aside-status')
+if (asideStatus !== undefined) {
+   if (asideStatus === 'hide') {
+     document.documentElement.classList.add('hide-aside')
+   } else {
+     document.documentElement.classList.remove('hide-aside')
+   }
+}})()</script><meta name="generator" content="Hexo 5.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="author-avatar"><img class="avatar-img" src="https://avatars0.githubusercontent.com/u/48089846?s=400&amp;u=39416cbb82df7df1d209ad313a32b17862577596&amp;v=4" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">3</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-archive"></i><span> 时间轴</span></a></div></div></div></div><div id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg)"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">YTEP</a></span><span id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-archive"></i><span> 时间轴</span></a></div></div><span class="close" id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></span></span></nav><div id="post-info"><h1 class="post-title">No title</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2020-12-10T08:46:23.963Z" title="Created 2020-12-10 16:46:23">2020-12-10</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2020-12-10T08:46:12.087Z" title="Updated 2020-12-10 16:46:12">2020-12-10</time></span></div><div class="meta-secondline"> <span class="post-meta-separator">|</span><span class="post-meta-pv-cv"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post View:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h2 id="Stacked-Cross-Attention-for-Image-Text-Matching"><a href="#Stacked-Cross-Attention-for-Image-Text-Matching" class="headerlink" title="Stacked Cross Attention for Image-Text Matching"></a>Stacked Cross Attention for Image-Text Matching</h2><blockquote>
+<p>Analysis, further thinking and relation with my current work</p>
+</blockquote>
+<p>Hint: 本文主要是对该论文进行分析，除了对论文内容进行叙述，还穿插着本人自己的思考，所以该文中的一些论述不一定在原论文有对应的表达。</p>
+<h3 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h3><p>之前的工作：</p>
+<ol>
+<li>简单地将所有可能的图像区域–单词对的相似度进行融合，而没有对重要或不重要的词语和区域施加不同的注意力。</li>
+<li>使用多阶段的注意力机制对图像特征空间和文本特征空间进行有限次的语义对齐 (alignment), 可解释性相对较差。</li>
+</ol>
+<p>在本文中，作者提出了Stacked Cross Attention，充分利用图像区域与文本中的词语以探索隐空间 (特征空间) 的对齐，并计算图像-文本相似度。</p>
+<h3 id="Intro"><a href="#Intro" class="headerlink" title="Intro"></a>Intro</h3><p>作者注意到，文本中的内容会频繁地涉及图像中的主要/显著物体，并和这些物体的特征和动作相关联。(通常还是隐式的表达，例如在下图中，A few 隐式地参考了图像中的两个人，next to 则参考了人和左边的狗)。</p>
+<img src="C:\Users\13527\Desktop\stacked\img1.jpg" alt="img1" style="zoom: 50%;" />
+
+<p>因此，图像匹配的文本其实是该图像的弱标注 (weak annotation)。即文本中的词实际对应着图像中的特殊但未知的一些区域。因此找到隐藏的对应关系对于图文匹配任务非常重要。</p>
+<p>YTEP:  既然在浅层语义层面 (即原图像和文本数据)，图像各区域与文本各词之间的关联是隐式且复杂的，则设法将图像和文本进行良好的高维投影 (通过正确的学习方式)，以促使在隐空间中，图像特征 $v$ 和文本特征 $t$ 的各维度均为可比较的 (comparable)。由此，便可以通过度量 $v$ 和 $t$ 的距离以表示原图像数据和文本数据的相似程度。In a word，就是让低层语义数据映射到特征空间后，原本的复杂跨域对应关系变为特征向量间的简单可比关系。</p>
+<h3 id="SCAN"><a href="#SCAN" class="headerlink" title="SCAN"></a>SCAN</h3><p>首先使用bottom-up attention去检测，并将图像各区域进行特征编码（转化为特征向量）， 同时，将文本中的各文字转化为特征向量。之后用stacked cross attention将文本特征和图像特征进行对齐，并计算图像-文本相似度。</p>
+<p>图像区域的特征向量集合 $V = {v_1,…,v_k},v_i\in\mathbb{R}^D$，每个向量表示图像中的一个区域。</p>
+<p>各单词的特征向量集合 $E = {e_1,…,e_n}, e_i\in\mathbb{R}^D$， 各向量表示文本描述中的一个单词。</p>
+<h4 id="Image-text-formulation"><a href="#Image-text-formulation" class="headerlink" title="Image-text formulation:"></a>Image-text formulation:</h4><p>给定图片和文本描述，首先用每个图像区域对文本的各个词施加不同的注意力，将施加注意力后的文本转化为新的向量 $t_{new}$，再用该区域与 $t_{new}$ 做比较以确定该图像区域对于文本的重要性。(eg: 是否在$t_{new}$) 中有所提及。</p>
+<img src="C:\Users\13527\AppData\Roaming\Typora\typora-user-images\image-20201209205428649.png" alt="image-20201209205428649" style="zoom:67%;" />
+
+<p>给定图像 $I$ 含有 $k$ 个区域，文本 $T$ 含有 $n$ 个词语，首先我们计算所有 $(v_i,e_j)$ 数据对的相似性矩阵 $S$：<br>$$<br>s_{ij} = \frac{v_i^Te_j}{||v_i||\cdot||e_j||},\ i\in[1,k],\ j\in[1,n]<br>$$<br>将相似度阈值设为0，并将矩阵标准化：<br>$$<br>\overline{s}<em>{ij} = \frac{[s</em>{ij}]<em>{+}}{\sqrt{\sum</em>{i=1}^k[s_{ij}]<em>{+}^2}}<br>$$<br>用图像区域对各个词语施加注意力后，整个文本的加权表达为：<br>$$<br>a_i^t=\sum_{j=1}^n\alpha</em>{ij}e_j<br>$$<br>其中<br>$$<br>\alpha_{ij} = \frac{exp(\lambda_1 \overline{s_{ij}})}{\sum_{j=1}^nexp(\lambda_1 \overline{s_{ij}})}<br>$$<br>$\alpha_{ij}$ 表示 $v_i$ 对 $e_j$ 的相似度占 $v_i$ 对所有词语的相似度之和的比例。</p>
+<p>$v_i$ 对于文本 $a_i^t$ 的重要性则可以表示为：<br>$$<br>R(v_i,a_i^t) = \frac{v_i^Ta_i^t}{||v_i||\cdot||a_i^t||}<br>$$<br>图像 $I$ 与文本 $T$ 的相似度可如下计算：<br>$$<br>S_{AVG} (I,T) = \frac{\sum_{i=1}^tR(e_j,a_j^v)}{n}<br>$$<br>值得注意的是，如果区域 $i$ 在文本中没有提及，则 $v_i$ 和 $a^t_i$ 的相似度会很低，因为 $\forall j\in[1,n] \ s_{ij} \to 0$，即 $v_i$ 无法从文本中提取出有效的信息。反之，如果区域 $i$ 在文本中有提及，则 $v_i$ 和 $a^t_i$ 的相似度较高。由此，便在训练过程中实现了图像和文本的语义空间的对齐。</p>
+<h4 id="Text-Image-formulation"><a href="#Text-Image-formulation" class="headerlink" title="Text-Image formulation:"></a>Text-Image formulation:</h4><p>首先用文本中的各词对每个图像区域施加注意力，将施加注意力后的各区域融合得到向量 $v_{new}$, 再用该单词与 $v_{new}$ 做比较，确定该词对于该图像的重要性。</p>
+<img src="C:\Users\13527\Desktop\stacked\img3.jpg" alt="img3" style="zoom:67%;" />
+
+
+
+<p>计算图像 $I$ 和 文本 $T$ 的相似性矩阵 $S’$ ，其中区域 $i$ 和词语 $j$ 之间的相似度为<br>$$<br>\overline {s}<em>{ij}’ = \frac{[s</em>{ij}]<em>+}{\sum</em>{j=1}^n[s_{ij}]^2_+}<br>$$<br>用词 $e_j$ 对各个图像区域施加注意力后，整个图像可通过各个区域进行加权融合表示：<br>$$<br>a_j^v = \sum_{i=1}^k \alpha_{ij}\cdot v_i<br>$$<br>其中 $\alpha_{ij}$ 表示词 $j$ 对区域 $i$ 的注意力：<br>$$<br>\alpha_{ij} = \frac{exp(\lambda_1\overline{s}’<em>{ij})}{\sum</em>{i=1}^kexp(\lambda_1 \overline{s}’_{ij})}<br>$$<br>词 $e_j$ 对图像向量 $a_j^v$ 的重要性为：<br>$$<br>R(e_j,a_j^v) = \frac{e_j^Ta_j^v}{||e_j||\cdot||a_j^v||}<br>$$</p>
+<p>则图像 $I$ 和 文本 $T$  之间的相似度可表示为：<br>$$<br>S’<em>{AVG} (I,T) = \frac{\sum</em>{j=1}^nR(e_j,a_j^v)}{n}<br>$$<br>YTEP: 其实可以考虑将各区域对文本的相似度进行合理加权。 但主要问题是各区域并非图像中独立的部分，而有众多重叠的部分。</p>
+<p>那么在之前的工作中，用点积计算区域与单词的相似度，$s_{ij} =v_i^Te_j$ 。对于每个词语，找到其对应的最大相似度，最终将所有词语的最大相似度相加得到文本-图像的相似度。<br>$$<br>S’<em>{SM}(I,T) = \sum</em>{j=1}^n\max_i(s_{ij})<br>$$<br>本文对该公式进行了延拓，同时考虑将所有区域的最大相似度求和。<br>$$<br>S_{SM}(I,T) = \sum_{i=1}^t\max_j(s_{ij})<br>$$<br>YTEP: 之前的方法是直接用局部相似度进行计算，但是没有对跨模态的局部向量 (区域/单词) 进行对齐操作。模型并没有充分利用数据中的语义。</p>
+<h3 id="Alignment-Objective"><a href="#Alignment-Objective" class="headerlink" title="Alignment Objective"></a>Alignment Objective</h3><p>使用 Triplet loss:<br>$$<br>l(I,T) = \overbrace{\sum_{\hat{T}}[\alpha-S(I,T)+S(I,\hat{T})]<em>{+}}^{image \ anchor}+\underbrace{\sum</em>{\hat I}[\alpha-S(I,T)+S(\hat I,T)]<em>+}</em>{text\ anchor}<br>$$</p>
+<p>对应每一个image, text anchor，将其和所有负样本对所对应的损失相加。如果 $(I,T)$ 在共同映射空间中的相似度大于其他所有还有 $I$ 或 $T$ 的负样本对，则 $S(I,T)$ 的值很大，导致损失函数为0。 而如果 $(I,T)$ 在映射空间中的相似度较小，则 $S(I,T)$ 值很小，$S(I,\hat{T})$ 和 $S(\hat I,T)$ 相对较大，则损失函数很大，模型会对映射方式进一步优化。为了减少计算量，通常用难样本对代替所有负样本对进行计算。对于正样本对 $(I,T)$，<br>$$<br>\hat{I}<em>h = argmax</em>{m\neq I}S(m,T) \</p>
+<p>\hat{T}<em>h=argmax</em>{d\neq T}S(I,d) \<br>l_{hard}=[\alpha-S(I,T)+S(I,\hat{T}<em>h)]</em>{+}+[\alpha-S(I,T)+S(\hat{I_h},T)]_+<br>$$</p>
+<p>YTEP：经过上述对SCAN网络的分析可发现，本文中所提及的Alignment其实是在计算图像和文本的相似度时，隐式地运用了跨模态的Attention机制进行对齐。而并没有显式地 (例如通过区域与词之间的相似度直接改变两者的特征图)。</p>
+</article><div class="tag_share"><div class="post-meta__tag-list"></div><div class="post_share"><div class="social-share" data-image="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/2020/12/03/image-text-matching-%E8%AE%BA%E6%96%87%E7%A0%94%E8%AF%BB/"><img class="next-cover" src="https://s3.ax1x.com/2020/12/02/D4G1zT.jpg" onerror="onerror=null;src='/img/404.jpg'"><div class="pagination-info"><div class="label">Next Post</div><div class="next_info">image-text matching 论文研读</div></div></a></div></nav></div><div class="aside_content" id="aside_content"><div class="card-widget card-info"><div class="card-content"><div class="card-info-avatar is-center"><img class="avatar-img" src="https://avatars0.githubusercontent.com/u/48089846?s=400&amp;u=39416cbb82df7df1d209ad313a32b17862577596&amp;v=4" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/><div class="author-info__name">YTEP</div><div class="author-info__description"></div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">3</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/YTEP-ZHI"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/YTEP-ZHI" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="/ytepjz@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a></div></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="card-content"><div class="item-headline"><i class="fas fa-stream"></i><span>Catalog</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Stacked-Cross-Attention-for-Image-Text-Matching"><span class="toc-number">1.</span> <span class="toc-text">Stacked Cross Attention for Image-Text Matching</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Abstract"><span class="toc-number">1.1.</span> <span class="toc-text">Abstract</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Intro"><span class="toc-number">1.2.</span> <span class="toc-text">Intro</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SCAN"><span class="toc-number">1.3.</span> <span class="toc-text">SCAN</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Image-text-formulation"><span class="toc-number">1.3.1.</span> <span class="toc-text">Image-text formulation:</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Text-Image-formulation"><span class="toc-number">1.3.2.</span> <span class="toc-text">Text-Image formulation:</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Alignment-Objective"><span class="toc-number">1.4.</span> <span class="toc-text">Alignment Objective</span></a></li></ol></li></ol></div></div></div><div class="card-widget card-recent-post"><div class="card-content"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Post</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2020/12/10/Stack%20Cross%20Attention%20for%20Image-Text%20matching/" title="No title"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="No title"/></a><div class="content"><a class="title" href="/2020/12/10/Stack%20Cross%20Attention%20for%20Image-Text%20matching/" title="No title">No title</a><time datetime="2020-12-10T08:46:23.963Z" title="Created 2020-12-10 16:46:23">2020-12-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2020/12/03/image-text-matching-%E8%AE%BA%E6%96%87%E7%A0%94%E8%AF%BB/" title="image-text matching 论文研读"><img src="https://s3.ax1x.com/2020/12/02/D4G1zT.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="image-text matching 论文研读"/></a><div class="content"><a class="title" href="/2020/12/03/image-text-matching-%E8%AE%BA%E6%96%87%E7%A0%94%E8%AF%BB/" title="image-text matching 论文研读">image-text matching 论文研读</a><time datetime="2020-12-03T04:55:58.000Z" title="Created 2020-12-03 12:55:58">2020-12-03</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2020/12/03/%E4%BA%BA%E8%84%B8%E8%AF%86%E5%88%AB%E6%A8%A1%E5%9E%8B-%E8%AE%BA%E6%96%87%E7%A0%94%E8%AF%BB/" title="人脸识别模型 论文研读"><img src="https://s3.ax1x.com/2020/12/02/D4G0W6.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="人脸识别模型 论文研读"/></a><div class="content"><a class="title" href="/2020/12/03/%E4%BA%BA%E8%84%B8%E8%AF%86%E5%88%AB%E6%A8%A1%E5%9E%8B-%E8%AE%BA%E6%96%87%E7%A0%94%E8%AF%BB/" title="人脸识别模型 论文研读">人脸识别模型 论文研读</a><time datetime="2020-12-03T04:54:30.000Z" title="Created 2020-12-03 12:54:30">2020-12-03</time></div></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 By YTEP</div><div class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Read Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Switch Between Light And Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="Setting"><i class="fas fa-cog"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table Of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back To Top"><i class="fas fa-arrow-up"></i></button></div></div><div><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    loader: {
+      source: {
+        '[tex]/amsCd': '[tex]/amscd'
+      }
+    },
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        addClass: [200,() => {
+          document.querySelectorAll('mjx-container:not([display=\'true\']').forEach( node => {
+            const target = node.parentNode
+            if (!target.classList.contains('has-jax')) {
+              target.classList.add('mathjax-overflow')
+            }
+          })
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></div></body></html>
